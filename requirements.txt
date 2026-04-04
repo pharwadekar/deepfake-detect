@@ -7,6 +7,7 @@ filelock==3.25.2
 fonttools==4.62.1
 fsspec==2026.2.0
 Jinja2==3.1.6
+joblib==1.5.3
 kiwisolver==1.5.0
 MarkupSafe==3.0.3
 matplotlib==3.10.8
@@ -22,11 +23,13 @@ pydantic_core==2.41.5
 pyparsing==3.3.2
 python-dateutil==2.9.0.post0
 PyYAML==6.0.3
+scikit-learn==1.8.0
 scipy==1.17.1
 setuptools==70.2.0
 six==1.17.0
 stringzilla==4.6.0
 sympy==1.14.0
+threadpoolctl==3.6.0
 torch==2.11.0+rocm7.1
 torchaudio==2.11.0+rocm7.1
 torchvision==0.26.0+rocm7.1
