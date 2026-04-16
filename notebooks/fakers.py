@@ -1,14 +1,10 @@
-import os
-import datetime
 import cv2
 import numpy as np
 import torch
 import torch.nn as nn
-import torchvision.transforms as transforms
-from torch.utils.data import Dataset, DataLoader, random_split
+from torch.utils.data import Dataset
 import torchvision.models as models
 from sklearn.metrics import accuracy_score, f1_score, roc_auc_score
-import matplotlib.pyplot as plt
 import albumentations as A
 from albumentations.pytorch import ToTensorV2
 
@@ -33,6 +29,52 @@ def extract_fft(image):
     # Convert back to 3 channels so it can be passed through standard CNNs like EfficientNet
     fft_3channel = cv2.cvtColor(magnitude_spectrum, cv2.COLOR_GRAY2BGR)
     return fft_3channel
+
+class HybridDeepfakeDetector(nn.Module):
+    def __init__(self, mode='hybrid'):
+        super(HybridDeepfakeDetector, self).__init__()
+        self.mode = mode
+        assert self.mode in ['rgb', 'fft', 'hybrid'], "Mode must be 'rgb', 'fft', or 'hybrid'"
+        
+        # RGB Branch (EfficientNet-B0 as feature extractor)
+        if self.mode in ['rgb', 'hybrid']:
+            self.rgb_branch = models.efficientnet_b0(weights=models.EfficientNet_B0_Weights.IMAGENET1K_V1)
+            self.num_ftrs = self.rgb_branch.classifier[1].in_features
+            self.rgb_branch.classifier = nn.Identity() # Remove final classification layer
+            
+        # FFT Branch (Another EfficientNet-B0) Let's assume it also takes 3 channel input
+        if self.mode in ['fft', 'hybrid']:
+            self.fft_branch = models.efficientnet_b0(weights=models.EfficientNet_B0_Weights.IMAGENET1K_V1)
+            self.num_ftrs = self.fft_branch.classifier[1].in_features
+            self.fft_branch.classifier = nn.Identity()
+            
+        # Fully Connected classification head
+        feature_dim = self.num_ftrs * 2 if self.mode == 'hybrid' else self.num_ftrs
+        
+        self.fc = nn.Sequential(
+            nn.Linear(feature_dim, 512),
+            nn.ReLU(),
+            nn.Dropout(0.5),
+            nn.Linear(512, 1),   # 1 output node
+            nn.Sigmoid()         # Output probabilities between 0 and 1
+        )
+
+    def forward(self, rgb_x=None, fft_x=None):
+        features = []
+        
+        if self.mode in ['rgb', 'hybrid'] and rgb_x is not None:
+            rgb_features = self.rgb_branch(rgb_x)
+            features.append(rgb_features)
+            
+        if self.mode in ['fft', 'hybrid'] and fft_x is not None:
+            fft_features = self.fft_branch(fft_x)
+            features.append(fft_features)
+            
+        # Join branches together if hybrid
+        combined = torch.cat(features, dim=1) if len(features) > 1 else features[0]
+        
+        out = self.fc(combined)
+        return out.squeeze()
 
 class DeepfakeImageDataset(Dataset):
     def __init__(self, image_paths, labels, mode='hybrid', transform=None):
@@ -91,7 +133,7 @@ class DeepfakeImageDataset(Dataset):
         elif self.mode == 'fft':
             return None, fft_tensor, label_tensor
 
-def evaluate_model(model, dataloader, mode='hybrid'):
+def evaluate_model(model, dataloader, mode='hybrid', device="cpu"):
 
     model.eval()
     loss_fn = nn.BCELoss()
@@ -128,13 +170,13 @@ def evaluate_model(model, dataloader, mode='hybrid'):
     
     return avg_loss, accuracy, f1, auc
 
-def evaluate_generalization_gap(model, in_domain_loader, cross_domain_loader, mode='hybrid'):
+def evaluate_generalization_gap(model, in_domain_loader, cross_domain_loader, mode='hybrid', device="cpu"):
     """
     Specifically executes the evaluation framework to measure domain shift
     This is the core metric to track the true generalization improvement.
     """
-    _, acc_in, f1_in, auc_in = evaluate_model(model, in_domain_loader, mode)
-    _, acc_cross, f1_cross, auc_cross = evaluate_model(model, cross_domain_loader, mode)
+    _, acc_in, f1_in, auc_in = evaluate_model(model, in_domain_loader, mode, device=device)
+    _, acc_cross, f1_cross, auc_cross = evaluate_model(model, cross_domain_loader, mode, device=device)
     
     generalization_gap = acc_in - acc_cross
     
@@ -144,4 +186,4 @@ def evaluate_generalization_gap(model, in_domain_loader, cross_domain_loader, mo
     print(f"=====================================")
     print(f"GENERALIZATION GAP: {generalization_gap*100:.2f}%\n")
     
-    return generalization_gap
+    return generalization_gap, (acc_in, acc_cross), (f1_in, f1_cross), (auc_in, auc_cross)
