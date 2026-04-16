@@ -4,6 +4,8 @@ import numpy as np
 from glob import glob
 from tqdm import tqdm
 
+import face_recognition
+
 def extract_frames_from_video(video_path, output_dir, num_frames=15):
     """
     Extracts a fixed number of evenly spaced frames from a video and saves them as JPEGs.
@@ -36,8 +38,14 @@ def extract_frames_from_video(video_path, output_dir, num_frames=15):
         if ret:
             # Save frame
             out_path = os.path.join(output_dir, f"{base_filename}_frame{idx:04d}.jpg")
-            cv2.imwrite(out_path, frame)
-            saved_count += 1
+            locations = face_recognition.face_locations(frame)
+            if len(locations) > 0:
+                top, rt, bot, lt = locations[0]
+                try:
+                    cv2.imwrite(out_path, frame[top:bot, lt:rt])
+                    saved_count += 1
+                except:
+                    continue
             
     cap.release()
 
