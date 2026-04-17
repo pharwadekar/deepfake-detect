@@ -372,9 +372,9 @@ def inject_styles() -> None:
             color: #bfaaff;
             text-transform: uppercase;
             letter-spacing: 0.14em;
-            font-size: 0.76rem;
+            font-size: 1.1rem;
             font-weight: 700;
-            margin-bottom: 0.45rem;
+            margin-bottom: 0.7rem;
             text-align: center;
         }
 
@@ -716,12 +716,12 @@ def render_header() -> None:
         <div class="hero">
             <div class="brand-chip">
                 <span class="brand-badge">DF</span>
-                <span class="brand-name">DeepFakeDetect</span>
+                <span class="brand-name">got real one anot?</span>
             </div>
-            <h1>Upload a video and get a clear result.</h1>
+            <h1>Got doubts if it's for real or not?</h1>
             <p>
-                A simple deepfake detection interface for quick checks. Upload a clip, run analysis,
-                and review a clear result with supporting evidence from the most suspicious frames.
+                A simple deepfake detection interface for quick checks.<br />
+                Upload a clip and leave it to us tell if got real or anot!
             </p>
         </div>
         """,
@@ -734,9 +734,8 @@ def render_upload_intro() -> None:
         """
         <div class="section-card">
             <div class="section-kicker">Upload</div>
-            <h2>Video check</h2>
             <div class="section-copy">
-                Add a video file to begin. Supported formats: MP4, MOV, AVI, and MKV.
+                Add a video file to begin
             </div>
         </div>
         """,
