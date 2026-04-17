@@ -79,6 +79,10 @@ def inject_styles() -> None:
         header[data-testid="stHeader"] {
             background: linear-gradient(180deg, rgba(13, 11, 22, 0.96) 0%, rgba(13, 11, 22, 0.82) 100%);
             border-bottom: 1px solid rgba(193, 165, 255, 0.12);
+            position: relative;
+            top: auto;
+            height: auto;
+            z-index: auto;
         }
 
         [data-testid="stToolbar"] {
@@ -95,7 +99,7 @@ def inject_styles() -> None:
 
         .block-container {
             max-width: 1320px;
-            padding-top: 1.35rem;
+            padding-top: 2.6rem;
             padding-bottom: 4rem;
         }
 
