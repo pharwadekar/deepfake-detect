@@ -32,7 +32,7 @@ nest-asyncio==1.6.0
 networkx==3.6.1
 numpy==2.4.3
 opencv-python-headless==4.13.0.92
-packaging==26.0
+packaging==25.0
 parso==0.8.6
 pexpect==4.9.0
 pillow==12.1.1
