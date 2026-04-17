@@ -8,11 +8,14 @@ from typing import Literal
 
 import albumentations as A
 import cv2
-import face_recognition
 import numpy as np
 import streamlit as st
 import torch
 from albumentations.pytorch import ToTensorV2
+
+_FACE_CASCADE = cv2.CascadeClassifier(
+    cv2.data.haarcascades + "haarcascade_frontalface_default.xml"
+)
 ROOT = Path(__file__).resolve().parent
 NOTEBOOKS_DIR = ROOT / "notebooks"
 if str(NOTEBOOKS_DIR) not in sys.path:
@@ -623,16 +626,22 @@ def sample_video_frames(video_path: Path, num_frames: int) -> list[tuple[int, fl
 
 
 def crop_first_face(frame: np.ndarray) -> np.ndarray | None:
-    locations = face_recognition.face_locations(frame)
-    if not locations:
+    gray = cv2.cvtColor(frame, cv2.COLOR_RGB2GRAY)
+    faces = _FACE_CASCADE.detectMultiScale(
+        gray,
+        scaleFactor=1.1,
+        minNeighbors=5,
+        minSize=(60, 60),
+    )
+    if len(faces) == 0:
         return None
 
-    top, right, bottom, left = locations[0]
+    x, y, w, h = faces[0]
     height, width = frame.shape[:2]
-    top = max(0, top)
-    left = max(0, left)
-    bottom = min(height, bottom)
-    right = min(width, right)
+    top = max(0, int(y))
+    left = max(0, int(x))
+    bottom = min(height, int(y + h))
+    right = min(width, int(x + w))
 
     if top >= bottom or left >= right:
         return None
